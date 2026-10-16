@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MapexWorldLayers",
+  "type": "object",
+  "required": [
+    "metadata",
+    "layers"
+  ],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "worldName": {
+          "type": "string"
+        },
+        "scaleKmPerUnit": {
+          "type": "number",
+          "default": 250
+        },
+        "canvasWidth": {
+          "type": "number",
+          "default": 1000
+        },
+        "canvasHeight": {
+          "type": "number",
+          "default": 700
+        }
+      }
+    },
+    "layers": {
+      "type": "object",
+      "properties": {
+        "ocean_landmask": {
+          "type": "array"
+        },
+        "orography": {
+          "type": "array"
+        },
+        "hydrography": {
+          "type": "array"
+        },
+        "biomes": {
+          "type": "array"
+        },
+        "climates": {
+          "type": "array"
+        },
+        "macrolanguages": {
+          "type": "array"
+        },
+        "cultures": {
+          "type": "array"
+        },
+        "civilizations": {
+          "type": "array"
+        },
+        "kingdoms": {
+          "type": "array"
+        },
+        "settlements": {
+          "type": "array"
+        },
+        "routes": {
+          "type": "array"
+        },
+        "resources": {
+          "type": "array"
+        }
+      }
+    }
+  }
+}

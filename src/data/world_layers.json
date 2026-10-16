@@ -1,0 +1,892 @@
+{
+  "metadata": {
+    "worldName": "Kosmos Cartográfico (Mapex Base)",
+    "scaleBarKm": 250,
+    "canvasWidth": 1000,
+    "canvasHeight": 700,
+    "baseMaps": {
+      "geography": "assets/base_maps/107937.jpg",
+      "languages": "assets/base_maps/107938.jpg",
+      "landmask": "assets/base_maps/107944.jpg"
+    }
+  },
+  "layers": {
+    "orography": [
+      {
+        "id": "mnt_sul_central",
+        "name": "Grande Cordilheira Meridional (Divisor K-E-J / C)",
+        "elevation": 4600,
+        "points": [
+          [
+            285,
+            545
+          ],
+          [
+            360,
+            515
+          ],
+          [
+            440,
+            480
+          ],
+          [
+            510,
+            410
+          ],
+          [
+            585,
+            365
+          ],
+          [
+            665,
+            345
+          ],
+          [
+            755,
+            345
+          ],
+          [
+            845,
+            355
+          ]
+        ]
+      },
+      {
+        "id": "mnt_norte_leste",
+        "name": "Cadeia Boreal-Oriental (Divisor J / A)",
+        "elevation": 3900,
+        "points": [
+          [
+            675,
+            135
+          ],
+          [
+            690,
+            205
+          ],
+          [
+            705,
+            275
+          ],
+          [
+            715,
+            340
+          ]
+        ]
+      },
+      {
+        "id": "mnt_noroeste",
+        "name": "Serra Ocidental (Divisor H / K-L)",
+        "elevation": 3100,
+        "points": [
+          [
+            245,
+            275
+          ],
+          [
+            295,
+            215
+          ],
+          [
+            360,
+            185
+          ],
+          [
+            405,
+            165
+          ]
+        ]
+      },
+      {
+        "id": "mnt_sudeste_dorsal",
+        "name": "Espinhaço do Continente Austral (Divisor D / F-A)",
+        "elevation": 3800,
+        "points": [
+          [
+            485,
+            575
+          ],
+          [
+            565,
+            515
+          ],
+          [
+            655,
+            465
+          ],
+          [
+            745,
+            415
+          ],
+          [
+            810,
+            385
+          ]
+        ]
+      }
+    ],
+    "hydrography": [
+      {
+        "id": "riv_k_golfo",
+        "name": "Rio Grande do Golfo de K",
+        "flow": "high",
+        "points": [
+          [
+            445,
+            355
+          ],
+          [
+            420,
+            385
+          ],
+          [
+            390,
+            405
+          ]
+        ]
+      },
+      {
+        "id": "riv_e_central",
+        "name": "Sistema Fluvial da Bacia E",
+        "flow": "high",
+        "points": [
+          [
+            545,
+            235
+          ],
+          [
+            555,
+            285
+          ],
+          [
+            550,
+            335
+          ],
+          [
+            510,
+            395
+          ],
+          [
+            480,
+            455
+          ]
+        ]
+      },
+      {
+        "id": "riv_j_leste",
+        "name": "Rio Trans-Oriental (J para A)",
+        "flow": "medium",
+        "points": [
+          [
+            605,
+            250
+          ],
+          [
+            665,
+            260
+          ],
+          [
+            725,
+            235
+          ],
+          [
+            765,
+            205
+          ]
+        ]
+      },
+      {
+        "id": "riv_f_austral",
+        "name": "Rio Austral de F",
+        "flow": "high",
+        "points": [
+          [
+            695,
+            485
+          ],
+          [
+            710,
+            555
+          ],
+          [
+            725,
+            625
+          ]
+        ]
+      }
+    ],
+    "biomes": [
+      {
+        "id": "bio_bacia_e",
+        "name": "Grande Floresta Fechada Central (Bacia E)",
+        "type": "ancient_canopy_basin",
+        "color": "#2d6a4f",
+        "center": [
+          555,
+          285
+        ],
+        "polygon": [
+          [
+            500,
+            195
+          ],
+          [
+            565,
+            180
+          ],
+          [
+            595,
+            205
+          ],
+          [
+            590,
+            265
+          ],
+          [
+            615,
+            305
+          ],
+          [
+            585,
+            350
+          ],
+          [
+            550,
+            375
+          ],
+          [
+            505,
+            345
+          ],
+          [
+            520,
+            275
+          ]
+        ]
+      },
+      {
+        "id": "bio_bacia_el",
+        "name": "Corredor Florestal Fechado (Bacia E/L)",
+        "type": "ancient_canopy_basin",
+        "color": "#40916c",
+        "center": [
+          405,
+          260
+        ],
+        "polygon": [
+          [
+            355,
+            200
+          ],
+          [
+            385,
+            195
+          ],
+          [
+            425,
+            245
+          ],
+          [
+            455,
+            285
+          ],
+          [
+            440,
+            310
+          ],
+          [
+            400,
+            295
+          ]
+        ]
+      },
+      {
+        "id": "bio_bacia_se_grande",
+        "name": "Bacia Florestal Oriental do Sul (F/A)",
+        "type": "ancient_canopy_basin",
+        "color": "#2d6a4f",
+        "center": [
+          795,
+          485
+        ],
+        "polygon": [
+          [
+            775,
+            435
+          ],
+          [
+            815,
+            435
+          ],
+          [
+            825,
+            495
+          ],
+          [
+            800,
+            535
+          ],
+          [
+            770,
+            505
+          ]
+        ]
+      },
+      {
+        "id": "bio_bacia_se_peq",
+        "name": "Enclave Florestal Austral (F)",
+        "type": "ancient_canopy_basin",
+        "color": "#52b788",
+        "center": [
+          660,
+          515
+        ],
+        "polygon": [
+          [
+            640,
+            495
+          ],
+          [
+            680,
+            495
+          ],
+          [
+            675,
+            530
+          ],
+          [
+            645,
+            530
+          ]
+        ]
+      }
+    ],
+    "climates": [
+      {
+        "id": "clim_c_med",
+        "name": "Faixa Subtropical Costeira (Sombra da Cordilheira C)",
+        "koppen": "Csa",
+        "color": "#f4a261",
+        "center": [
+          565,
+          385
+        ]
+      },
+      {
+        "id": "clim_i_artico",
+        "name": "Zona Subpolar Boreal (Arquipélago I)",
+        "koppen": "ET",
+        "color": "#a8dadc",
+        "center": [
+          510,
+          95
+        ]
+      },
+      {
+        "id": "clim_k_temp",
+        "name": "Bacia Marítima Temperada do Golfo (K)",
+        "koppen": "Cfb",
+        "color": "#90be6d",
+        "center": [
+          410,
+          440
+        ]
+      }
+    ],
+    "macrolanguages": [
+      {
+        "id": "lang_A",
+        "code": "A",
+        "name": "Família Macrolinguística A (Oriental-Austral)",
+        "color": "#e07a5f",
+        "isHybrid": false,
+        "centers": [
+          [
+            755,
+            235
+          ],
+          [
+            845,
+            485
+          ]
+        ]
+      },
+      {
+        "id": "lang_B",
+        "code": "B",
+        "name": "Família Isolada B (Ilha Austral)",
+        "color": "#d4a373",
+        "isHybrid": false,
+        "centers": [
+          [
+            715,
+            650
+          ]
+        ]
+      },
+      {
+        "id": "lang_C",
+        "code": "C",
+        "name": "Família Costeira C (Trans-Cordilheira)",
+        "color": "#cdb4db",
+        "isHybrid": false,
+        "centers": [
+          [
+            575,
+            360
+          ]
+        ]
+      },
+      {
+        "id": "lang_D",
+        "code": "D",
+        "name": "Família Noroeste Austral D",
+        "color": "#a3b18a",
+        "isHybrid": false,
+        "centers": [
+          [
+            620,
+            465
+          ]
+        ]
+      },
+      {
+        "id": "lang_E",
+        "code": "E",
+        "name": "Família Silvestre Central E",
+        "color": "#588157",
+        "isHybrid": false,
+        "centers": [
+          [
+            540,
+            290
+          ]
+        ]
+      },
+      {
+        "id": "lang_F",
+        "code": "F",
+        "name": "Família Continental Austral F",
+        "color": "#bc6c25",
+        "isHybrid": false,
+        "centers": [
+          [
+            665,
+            545
+          ]
+        ]
+      },
+      {
+        "id": "lang_G",
+        "code": "G",
+        "name": "Família Talassocrática Insular G",
+        "color": "#4ea8de",
+        "isHybrid": false,
+        "centers": [
+          [
+            105,
+            225
+          ],
+          [
+            160,
+            455
+          ],
+          [
+            160,
+            625
+          ]
+        ]
+      },
+      {
+        "id": "lang_H",
+        "code": "H",
+        "name": "Família Noroeste Boreal H",
+        "color": "#e9c46a",
+        "isHybrid": false,
+        "centers": [
+          [
+            275,
+            200
+          ]
+        ]
+      },
+      {
+        "id": "lang_I",
+        "code": "I",
+        "name": "Família Ártica Insular I",
+        "color": "#6c757d",
+        "isHybrid": false,
+        "centers": [
+          [
+            500,
+            90
+          ]
+        ]
+      },
+      {
+        "id": "lang_J",
+        "code": "J",
+        "name": "Família Setentrional-Planalto J",
+        "color": "#457b9d",
+        "isHybrid": false,
+        "centers": [
+          [
+            625,
+            205
+          ]
+        ]
+      },
+      {
+        "id": "lang_K",
+        "code": "K",
+        "name": "Família Hegemônica do Golfo K",
+        "color": "#e56b6f",
+        "isHybrid": false,
+        "centers": [
+          [
+            415,
+            395
+          ]
+        ]
+      },
+      {
+        "id": "lang_L",
+        "code": "L",
+        "name": "Família Central-Mesopotâmica L",
+        "color": "#dda15e",
+        "isHybrid": false,
+        "centers": [
+          [
+            435,
+            235
+          ]
+        ]
+      },
+      {
+        "id": "lang_EL",
+        "code": "E/L",
+        "name": "Zona Híbrida Crioula E/L (Vale Florestal)",
+        "color": "#84a98c",
+        "isHybrid": true,
+        "centers": [
+          [
+            395,
+            290
+          ]
+        ]
+      },
+      {
+        "id": "lang_GK",
+        "code": "G/K",
+        "name": "Enclave de Contato Marítimo G/K",
+        "color": "#b5838d",
+        "isHybrid": true,
+        "centers": [
+          [
+            195,
+            465
+          ]
+        ]
+      },
+      {
+        "id": "lang_HI",
+        "code": "H/I",
+        "name": "Arquipélago de Transição H/I",
+        "color": "#b7b7a4",
+        "isHybrid": true,
+        "centers": [
+          [
+            405,
+            115
+          ]
+        ]
+      },
+      {
+        "id": "lang_IJ",
+        "code": "I/J",
+        "name": "Ilhas Boreais I/J",
+        "color": "#5c677d",
+        "isHybrid": true,
+        "centers": [
+          [
+            560,
+            115
+          ]
+        ]
+      },
+      {
+        "id": "lang_IJL",
+        "code": "I/J/L",
+        "name": "Entroncamento Insular Trifásico I/J/L",
+        "color": "#9a8c98",
+        "isHybrid": true,
+        "centers": [
+          [
+            485,
+            165
+          ]
+        ]
+      },
+      {
+        "id": "lang_ME",
+        "code": "M/E",
+        "name": "Ilha Austral de Substrato M/E",
+        "color": "#c9ada7",
+        "isHybrid": true,
+        "centers": [
+          [
+            585,
+            625
+          ]
+        ]
+      }
+    ],
+    "cultures": [
+      {
+        "id": "cult_talasso_g",
+        "name": "Navegadores de Costão (Matriz G / G-K)",
+        "macroLang": "G",
+        "center": [
+          155,
+          445
+        ]
+      },
+      {
+        "id": "cult_silvestre_e",
+        "name": "Guardiões da Claustra (Matriz E)",
+        "macroLang": "E",
+        "center": [
+          545,
+          280
+        ]
+      },
+      {
+        "id": "cult_estreito_a",
+        "name": "Talassocracia do Estreito Oriental (Matriz A)",
+        "macroLang": "A",
+        "center": [
+          835,
+          395
+        ]
+      }
+    ],
+    "civilizations": [
+      {
+        "id": "civ_golfo_k",
+        "name": "Berço Civilizacional do Golfo Interno (K)",
+        "era": "Idade do Bronze Tardio",
+        "center": [
+          375,
+          415
+        ]
+      },
+      {
+        "id": "civ_bacia_e",
+        "name": "Civilização Hidráulica da Grande Floresta (E)",
+        "era": "Antiguidade Clássica",
+        "center": [
+          550,
+          295
+        ]
+      }
+    ],
+    "kingdoms": [
+      {
+        "id": "kng_imperio_k",
+        "name": "Domínio Talassocrático do Golfo (K)",
+        "capital": "Keth-Adar",
+        "color": "#d62828",
+        "center": [
+          410,
+          415
+        ]
+      },
+      {
+        "id": "kng_liga_g",
+        "name": "Confederação Insular de Vael (G)",
+        "capital": "Porto Vaelis",
+        "color": "#0077b6",
+        "center": [
+          175,
+          455
+        ]
+      },
+      {
+        "id": "kng_principado_c",
+        "name": "Principados da Costa Estreita (C)",
+        "capital": "Serramar",
+        "color": "#7209b7",
+        "center": [
+          555,
+          375
+        ]
+      }
+    ],
+    "settlements": [
+      {
+        "id": "cit_keth_adar",
+        "name": "Keth-Adar",
+        "type": "capital",
+        "lang": "K",
+        "coords": [
+          372,
+          398
+        ],
+        "pop": 145000
+      },
+      {
+        "id": "cit_vaelis",
+        "name": "Porto Vaelis (Enclave G/K)",
+        "type": "port",
+        "lang": "G/K",
+        "coords": [
+          195,
+          462
+        ],
+        "pop": 68000
+      },
+      {
+        "id": "cit_en_mir",
+        "name": "En-Mir (Coração da Bacia E)",
+        "type": "sanctuary_city",
+        "lang": "E",
+        "coords": [
+          552,
+          282
+        ],
+        "pop": 92000
+      },
+      {
+        "id": "cit_passo_c",
+        "name": "Fortaleza do Passo Sul (Fronteira K/C)",
+        "type": "fortress",
+        "lang": "C",
+        "coords": [
+          508,
+          408
+        ],
+        "pop": 18000
+      },
+      {
+        "id": "cit_estreito_a",
+        "name": "Toa-Shan (Travessia de A)",
+        "type": "port",
+        "lang": "A",
+        "coords": [
+          865,
+          375
+        ],
+        "pop": 84000
+      }
+    ],
+    "routes": [
+      {
+        "id": "rt_mar_gk",
+        "name": "Rota Marítima do Ocidente (G <-> K)",
+        "type": "sea",
+        "points": [
+          [
+            195,
+            462
+          ],
+          [
+            245,
+            495
+          ],
+          [
+            315,
+            520
+          ],
+          [
+            360,
+            445
+          ],
+          [
+            372,
+            398
+          ]
+        ]
+      },
+      {
+        "id": "rt_travessia_a",
+        "name": "Travessia dos Dois Continentes (A Norte <-> A Sul)",
+        "type": "sea",
+        "points": [
+          [
+            865,
+            375
+          ],
+          [
+            885,
+            405
+          ],
+          [
+            875,
+            445
+          ]
+        ]
+      },
+      {
+        "id": "rt_fluvial_e",
+        "name": "Eixo Fluvial da Madeira e Âmbar (Bacia E -> Costa C)",
+        "type": "river_land",
+        "points": [
+          [
+            552,
+            282
+          ],
+          [
+            550,
+            335
+          ],
+          [
+            508,
+            408
+          ],
+          [
+            485,
+            455
+          ]
+        ]
+      }
+    ],
+    "resources": [
+      {
+        "id": "res_ferro_j",
+        "name": "Minas de Ferro Boreal",
+        "type": "iron",
+        "coords": [
+          685,
+          215
+        ]
+      },
+      {
+        "id": "res_madeira_e",
+        "name": "Madeira de Lei Imperial (Bacia E)",
+        "type": "timber",
+        "coords": [
+          535,
+          255
+        ]
+      },
+      {
+        "id": "res_sal_gk",
+        "name": "Salinas e Pérolas do Estreito G/K",
+        "type": "salt_pearls",
+        "coords": [
+          190,
+          480
+        ]
+      },
+      {
+        "id": "res_ouro_se",
+        "name": "Veios Auríferos da Serra Austral (D/F)",
+        "type": "gold",
+        "coords": [
+          645,
+          475
+        ]
+      }
+    ]
+  }
+}
