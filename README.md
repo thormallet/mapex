@@ -31,7 +31,19 @@ Framework cartográfico interativo em **Three.js WebGL + 2.5D** para worldbuildi
 
 ## 🤖 Agentes e Skills no Antigravity
 
-- `mapex-orchestrator`: Orquestração geral das 12 camadas GIS.
-- `physical-cartographer`: Hidrologia, climas e relevo físico.
-- `anthro-linguist`: Troncos linguísticos e toponímia.
-- `webgl-25d-engineer`: Motor 3D e shaders.
+### Agentes
+- **`mapex-orchestrator` (Main Agent)**: Orquestrador e coordenador-geral das 12 camadas GIS e motores visuais.
+- **`physical-cartographer`**: Geomorfologia, orografia, hidrologia, climas e biomas (`107937` e `107944`).
+- **`anthro-linguist`**: Famílias macrolinguísticas (`A`–`M`), zonas híbridas, culturas e toponímia (`107938`).
+- **`geopolitics-economist`**: Civilizações, reinos, assentamentos, recursos econômicos, rotas comerciais e história.
+- **`webgl-25d-engineer`**: Motor 3D/2.5D Three.js, malhas de relevo, iluminação solar e shaders (`src/engine/`).
+- **`cartographic-ui`**: Interface HTML/CSS, HUD cartográfico, Inspetor de Lore, filtros e linha do tempo (`index.html`).
+
+### Skills
+- `skill-spatial-calibrator`: Gabarito de calibração espacial e costeira (`1000x700`) sobre as 3 cartas manuscritas.
+- `skill-historical-chronicler`: Simulador de Linha do Tempo (4 Eras) e gerador de Lore/Crônicas para o Inspetor.
+- `skill-cartographic-validator`: Auditoria instantânea de JSON, schema e limites costeiros (`node src/services/validate_layers.js`).
+- `skill-layer-generator`: Geração procedural estruturada das 12 camadas GIS.
+- `skill-linguistic-evolver`: Evolução fonética e geração de topônimos consistentes.
+- `skill-raster-to-vector`: Extração de polígonos e feições a partir das cartas base.
+- `skill-route-pathfinder`: Cálculo de rotas terrestres e marítimas ponderadas por topografia.

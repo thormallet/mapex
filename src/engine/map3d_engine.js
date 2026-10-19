@@ -1,7 +1,7 @@
 /**
- * MAPEX 3D Engine — Renderizador Tridimensional com Preservação Raster
+ * MAPEX 3D Engine — Renderizador Tridimensional com Preservação Raster & Worldbuilding GIS
  * Utiliza Three.js com elevação orográfica de terreno, iluminação solar dinâmica,
- * torres de assentamentos 3D, rotas comerciais em arco e selos linguísticos flutuantes.
+ * paridade para todas as 12 camadas, suporte a 4 Eras Históricas e interação sem window.prompt.
  */
 
 class Mapex3DEngine {
@@ -18,16 +18,24 @@ class Mapex3DEngine {
     this.textureLoader = null;
     this.activeTexture = null;
     this.reliefExaggeration = 1.35;
+    this.currentEra = null; // null = Todas as Eras, ou 1, 2, 3, 4
     
-    // Grupos de camadas 3D
+    // Grupos para todas as 12 camadas do Mapex + auxiliares
     this.groups = {
       terrain: new THREE.Group(),
+      ocean_landmask: new THREE.Group(),
+      orography: new THREE.Group(),
+      hydrography: new THREE.Group(),
+      biomes: new THREE.Group(),
+      climates: new THREE.Group(),
+      macrolanguages: new THREE.Group(),
+      cultures: new THREE.Group(),
+      civilizations: new THREE.Group(),
+      kingdoms: new THREE.Group(),
       settlements: new THREE.Group(),
       routes: new THREE.Group(),
-      macrolanguages: new THREE.Group(),
-      biomes: new THREE.Group(),
-      orographyMarkers: new THREE.Group(),
-      particles: new THREE.Group()
+      resources: new THREE.Group(),
+      decorations: new THREE.Group()
     };
     
     // Iluminação
@@ -38,6 +46,7 @@ class Mapex3DEngine {
     // Raycaster e interação
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
+    this.mouseDownPos = new THREE.Vector2();
     this.interactiveObjects = [];
     this.hoveredObject = null;
     
@@ -93,12 +102,8 @@ class Mapex3DEngine {
     // 7. Constrói o terreno 3D baseado no mapa raster original
     await this.buildTerrain();
 
-    // 8. Constrói os elementos 3D do mundo
-    this.buildSettlements();
-    this.buildRoutes();
-    this.buildMacrolanguages();
-    this.buildBiomeEnclaves();
-    this.buildDecorations();
+    // 8. Constrói todas as feições 3D (Paridade 12 Camadas)
+    this.rebuildAllLayers();
 
     // 9. Eventos de mouse e redimensionamento
     this.bindEvents();
@@ -108,11 +113,9 @@ class Mapex3DEngine {
   }
 
   setupLighting() {
-    // Luz ambiente quente estilo pergaminho iluminado
     this.ambientLight = new THREE.AmbientLight(0xffecd1, 0.65);
     this.scene.add(this.ambientLight);
 
-    // Sol de cartógrafo direcional (projeta sombras sobre as montanhas)
     this.sunLight = new THREE.DirectionalLight(0xfff3d6, 1.45);
     this.updateSunPosition();
     this.sunLight.castShadow = true;
@@ -127,7 +130,6 @@ class Mapex3DEngine {
     this.sunLight.shadow.bias = -0.0004;
     this.scene.add(this.sunLight);
 
-    // Luz de preenchimento azul-noite suave para profundidade nas sombras
     const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.35);
     fillLight.position.set(-80, 50, -80);
     this.scene.add(fillLight);
@@ -142,15 +144,10 @@ class Mapex3DEngine {
   }
 
   setSunTime(value) {
-    // value de 0 a 100
     this.sunAngle = (value / 100) * Math.PI * 2;
     this.updateSunPosition();
   }
 
-  /**
-   * Converte coordenadas 2D do mapa original [0..1000, 0..700]
-   * em coordenadas 3D de mundo no Three.js [X, Z] e interpola a elevação Y.
-   */
   mapToWorldCoords(px, py) {
     const worldW = 100;
     const worldH = 70;
@@ -168,25 +165,19 @@ class Mapex3DEngine {
     return [Math.round(px), Math.round(py)];
   }
 
-  /**
-   * Cria mapa de elevação orográfica desenhando as cristas montanhosas
-   * em um canvas offscreen e aplicando blur gaussiano.
-   */
   generateOrographyHeightmap() {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 358;
     const ctx = canvas.getContext('2d');
 
-    // Fundo base (terra plana com elevação sutil)
     ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Desenha as cordilheiras do mapa 1 como linhas com gradiente e blur
     const orography = this.worldData.layers.orography || [];
     orography.forEach(m => {
       if (!m.points || m.points.length < 2) return;
-      const intensity = Math.min(255, Math.round((m.elevation / 4600) * 230));
+      const intensity = Math.min(255, Math.round(((m.elevation || 3500) / 4600) * 230));
       const hex = intensity.toString(16).padStart(2, '0');
 
       ctx.save();
@@ -206,7 +197,6 @@ class Mapex3DEngine {
       });
       ctx.stroke();
 
-      // Passe de crista afiada no topo
       ctx.lineWidth = 4;
       ctx.shadowBlur = 4;
       ctx.strokeStyle = '#ffffff';
@@ -217,6 +207,25 @@ class Mapex3DEngine {
     return ctx.getImageData(0, 0, canvas.width, canvas.height);
   }
 
+  loadHeightmapData() {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(ctx.getImageData(0, 0, img.width, img.height));
+      };
+      img.onerror = () => {
+        resolve(this.generateOrographyHeightmap());
+      };
+      img.src = 'assets/styled_maps/mapex_heightmap.png';
+    });
+  }
+
   async buildTerrain() {
     const worldW = 100;
     const worldH = 70;
@@ -224,10 +233,9 @@ class Mapex3DEngine {
     const segY = 140;
 
     this.terrainGeo = new THREE.PlaneGeometry(worldW, worldH, segX, segY);
-    this.terrainGeo.rotateX(-Math.PI / 2); // plano horizontal X-Z
+    this.terrainGeo.rotateX(-Math.PI / 2);
 
-    // Lê os dados de elevação do heightmap gerado
-    const heightData = this.generateOrographyHeightmap();
+    const heightData = await this.loadHeightmapData();
     const pos = this.terrainGeo.attributes.position;
     this.baseHeights = new Float32Array(pos.count);
 
@@ -235,27 +243,24 @@ class Mapex3DEngine {
       const vx = pos.getX(i);
       const vz = pos.getZ(i);
 
-      // Mapeia para pixels do heightmap
       const u = (vx / worldW) + 0.5;
       const v = (vz / worldH) + 0.5;
       const px = Math.floor(Math.max(0, Math.min(1, u)) * (heightData.width - 1));
       const py = Math.floor(Math.max(0, Math.min(1, v)) * (heightData.height - 1));
       const pIdx = (py * heightData.width + px) * 4;
 
-      const rawVal = heightData.data[pIdx] / 255.0; // 0..1
-      const elevation = Math.pow(rawVal, 1.45) * 6.5; // relevo montanhoso
+      const rawVal = heightData.data[pIdx] / 255.0;
+      const elevation = Math.pow(rawVal, 1.45) * 6.5;
       this.baseHeights[i] = elevation;
       pos.setY(i, elevation * this.reliefExaggeration);
     }
 
     this.terrainGeo.computeVertexNormals();
 
-    // Carrega a textura inicial da carta manuscrita
-    const currentBaseMap = document.getElementById('baseMapSelect') ? document.getElementById('baseMapSelect').value : 'assets/base_maps/107937.jpg';
+    const currentBaseMap = document.getElementById('baseMapSelect') ? document.getElementById('baseMapSelect').value : 'assets/styled_maps/mapex_kosmos_physical.png';
     this.activeTexture = await this.loadTextureAsync(currentBaseMap);
     this.activeTexture.anisotropy = 8;
 
-    // Material com shaders de iluminação física e pergaminho
     const terrainMat = new THREE.MeshStandardMaterial({
       map: this.activeTexture,
       roughness: 0.72,
@@ -269,11 +274,9 @@ class Mapex3DEngine {
     this.terrainMesh.castShadow = true;
     this.groups.terrain.add(this.terrainMesh);
 
-    // Mesa de carvalho/moldura cartográfica 3D em torno do mapa
     this.buildFramedBorder(worldW, worldH);
-
-    // Lâmina d'água oceanica translúcida nas bordas
     this.buildOceanWater(worldW, worldH);
+    this.buildDecorations();
   }
 
   buildFramedBorder(worldW, worldH) {
@@ -285,7 +288,6 @@ class Mapex3DEngine {
       metalness: 0.35
     });
 
-    // Borda moldada decorativa
     const frameGeo = new THREE.BoxGeometry(worldW + borderThick * 2, borderHeight, worldH + borderThick * 2);
     const frameMesh = new THREE.Mesh(frameGeo, frameMat);
     frameMesh.position.set(0, -borderHeight / 2 - 0.1, 0);
@@ -338,17 +340,11 @@ class Mapex3DEngine {
     pos.needsUpdate = true;
     this.terrainGeo.computeVertexNormals();
 
-    // Atualiza a altura de todos os elementos 3D posicionados no relevo
     this.repositionElementsOnRelief();
   }
 
   repositionElementsOnRelief() {
-    this.groups.settlements.children.forEach(obj => {
-      if (obj.userData.mapCoords) {
-        const pt = this.mapToWorldCoords(obj.userData.mapCoords[0], obj.userData.mapCoords[1]);
-        obj.position.y = pt.y;
-      }
-    });
+    this.rebuildAllLayers();
   }
 
   async switchBaseTexture(url) {
@@ -364,7 +360,6 @@ class Mapex3DEngine {
   loadTextureAsync(url) {
     return new Promise((resolve) => {
       this.textureLoader.load(url, (tex) => resolve(tex), undefined, () => {
-        // Fallback procedural em caso de falha de carregamento
         const canvas = document.createElement('canvas');
         canvas.width = 512; canvas.height = 358;
         const ctx = canvas.getContext('2d');
@@ -376,8 +371,25 @@ class Mapex3DEngine {
     });
   }
 
+  rebuildAllLayers() {
+    this.interactiveObjects = [];
+    this.buildSettlements();
+    this.buildRoutes();
+    this.buildMacrolanguages();
+    this.buildBiomeEnclaves();
+    this.buildHydrography();
+    this.buildOrography();
+    this.buildResources();
+    this.buildKingdoms();
+    this.buildCivilizations();
+    this.buildCultures();
+    this.buildClimates();
+    this.buildOceanLandmask();
+    this.applyEraFiltering();
+  }
+
   /**
-   * Constrói obeliscos/torres 3D com luz emissiva para cidades
+   * 1. ASSENTAMENTOS E CIDADES (Torres 3D com Beacons)
    */
   buildSettlements() {
     this.clearGroup(this.groups.settlements);
@@ -387,42 +399,29 @@ class Mapex3DEngine {
     const spireGeo = new THREE.ConeGeometry(0.25, 0.9, 6);
     spireGeo.translate(0, 1.35, 0);
 
-    const bronzeMat = new THREE.MeshStandardMaterial({
-      color: 0xd4a373,
-      metalness: 0.85,
-      roughness: 0.25
-    });
-
+    const bronzeMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, metalness: 0.85, roughness: 0.25 });
     const beaconGeo = new THREE.SphereGeometry(0.26, 12, 12);
-    const beaconMat = new THREE.MeshStandardMaterial({
-      color: 0xffe066,
-      emissive: 0xffaa00,
-      emissiveIntensity: 0.9
-    });
+    const beaconMat = new THREE.MeshStandardMaterial({ color: 0xffe066, emissive: 0xffaa00, emissiveIntensity: 0.9 });
 
     settlements.forEach(s => {
       const pos = this.mapToWorldCoords(s.coords[0], s.coords[1]);
       const group = new THREE.Group();
       group.position.set(pos.x, pos.y, pos.z);
-      group.userData = { type: 'settlement', data: s, mapCoords: s.coords };
+      group.userData = { type: 'settlement', data: s, mapCoords: s.coords, era: s.era || 'Era II' };
 
-      // Torre
       const tower = new THREE.Mesh(towerGeo, bronzeMat);
       tower.position.y = 0.9;
       tower.castShadow = true;
       group.add(tower);
 
-      // Pináculo
       const spire = new THREE.Mesh(spireGeo, bronzeMat);
       spire.castShadow = true;
       group.add(spire);
 
-      // Beacon luminoso flutuante no topo
       const beacon = new THREE.Mesh(beaconGeo, beaconMat);
       beacon.position.y = 2.15;
       group.add(beacon);
 
-      // Anel de ancoragem na base
       const ringGeo = new THREE.RingGeometry(0.5, 0.75, 16);
       ringGeo.rotateX(-Math.PI / 2);
       const ringMat = new THREE.MeshBasicMaterial({ color: 0xe9c46a, side: THREE.DoubleSide });
@@ -430,7 +429,6 @@ class Mapex3DEngine {
       ring.position.y = 0.05;
       group.add(ring);
 
-      // Rótulo flutuante em 3D (Sprite)
       const labelSprite = this.createTextSprite(s.name, '#fff3b0');
       labelSprite.position.set(0, 3.2, 0);
       labelSprite.scale.set(4.5, 1.8, 1);
@@ -442,7 +440,7 @@ class Mapex3DEngine {
   }
 
   /**
-   * Constrói rotas comerciais em arcos parabólicos 3D com partículas de tráfego
+   * 2. ROTAS COMERCIAIS (Arcos Parabólicos 3D com Caravanas)
    */
   buildRoutes() {
     this.clearGroup(this.groups.routes);
@@ -474,11 +472,10 @@ class Mapex3DEngine {
       });
 
       const tube = new THREE.Mesh(tubeGeo, tubeMat);
-      tube.userData = { type: 'route', data: rt };
+      tube.userData = { type: 'route', data: rt, era: rt.era || 'Era II' };
       this.groups.routes.add(tube);
       this.interactiveObjects.push(tube);
 
-      // Ponto luminoso de caravana/embarcação que viaja pela rota
       const caravanGeo = new THREE.SphereGeometry(0.32, 8, 8);
       const caravanMat = new THREE.MeshBasicMaterial({ color: isSea ? 0xfef08a : 0xffedd5 });
       const caravan = new THREE.Mesh(caravanGeo, caravanMat);
@@ -494,12 +491,311 @@ class Mapex3DEngine {
   }
 
   /**
-   * Constrói selos circulares flutuantes estilo medalhão para as famílias macrolinguísticas
+   * 3. HIDROGRAFIA (Rios Fluidos no Relevo 3D)
+   */
+  buildHydrography() {
+    this.clearGroup(this.groups.hydrography);
+    const rivers = this.worldData.layers.hydrography || [];
+
+    rivers.forEach(r => {
+      if (!r.points || r.points.length < 2) return;
+      const pts3D = r.points.map(pt => {
+        const w = this.mapToWorldCoords(pt[0], pt[1]);
+        w.y += 0.16; // offset perfeito anti Z-fighting
+        return w;
+      });
+
+      const curve = new THREE.CatmullRomCurve3D(pts3D);
+      const isHigh = r.flow === 'high';
+      const tubeGeo = new THREE.TubeGeometry(curve, 32, isHigh ? 0.22 : 0.15, 6, false);
+      const riverMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.75,
+        roughness: 0.1,
+        metalness: 0.6
+      });
+
+      const riverMesh = new THREE.Mesh(tubeGeo, riverMat);
+      riverMesh.userData = { type: 'hydrography', data: r };
+      this.groups.hydrography.add(riverMesh);
+      this.interactiveObjects.push(riverMesh);
+    });
+  }
+
+  /**
+   * 4. RECURSOS ESTRATÉGICOS (Totens e Ícones 3D Ancorados no Terreno)
+   */
+  buildResources() {
+    this.clearGroup(this.groups.resources);
+    const resources = this.worldData.layers.resources || [];
+
+    resources.forEach(res => {
+      const pos = this.mapToWorldCoords(res.coords[0], res.coords[1]);
+      const group = new THREE.Group();
+      group.position.set(pos.x, pos.y + 0.15, pos.z);
+      group.userData = { type: 'resource', data: res, mapCoords: res.coords };
+
+      const type = (res.type || '').toLowerCase();
+      let iconMesh;
+
+      if (type.includes('min') || type.includes('ouro') || type.includes('ferro') || type.includes('metal')) {
+        // Cristal de minério multifacetado dourado/cobre
+        const geo = new THREE.OctahedronGeometry(0.65, 0);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.6, metalness: 0.9, roughness: 0.2 });
+        iconMesh = new THREE.Mesh(geo, mat);
+        iconMesh.position.y = 0.8;
+      } else if (type.includes('port') || type.includes('mar') || type.includes('pesc')) {
+        // Farol/Âncora costeira com beacon azul-ciano
+        const geo = new THREE.CylinderGeometry(0.18, 0.35, 1.2, 8);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.8, roughness: 0.3 });
+        iconMesh = new THREE.Mesh(geo, mat);
+        iconMesh.position.y = 0.6;
+      } else if (type.includes('mad') || type.includes('florest') || type.includes('madeira')) {
+        // Bosque/Árvore de cedro 3D
+        const geo = new THREE.ConeGeometry(0.55, 1.4, 6);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.8 });
+        iconMesh = new THREE.Mesh(geo, mat);
+        iconMesh.position.y = 0.7;
+      } else {
+        // Gemas / Obelisco de obsidiana púrpura
+        const geo = new THREE.ConeGeometry(0.45, 1.2, 4);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 0.5, metalness: 0.5 });
+        iconMesh = new THREE.Mesh(geo, mat);
+        iconMesh.position.y = 0.6;
+      }
+
+      group.add(iconMesh);
+
+      // Rótulo discreto
+      const sprite = this.createTextSprite(res.name, '#86efac');
+      sprite.position.set(0, 1.8, 0);
+      sprite.scale.set(3.2, 1.2, 1);
+      group.add(sprite);
+
+      this.groups.resources.add(group);
+      this.interactiveObjects.push(group);
+    });
+  }
+
+  /**
+   * 5. OROGRAFIA (Selos e Cristas de Montanhas)
+   */
+  buildOrography() {
+    this.clearGroup(this.groups.orography);
+    const chains = this.worldData.layers.orography || [];
+
+    chains.forEach(m => {
+      if (!m.points || m.points.length === 0) return;
+      const mid = m.points[Math.floor(m.points.length / 2)];
+      const pos = this.mapToWorldCoords(mid[0], mid[1]);
+
+      const group = new THREE.Group();
+      group.position.set(pos.x, pos.y + 1.2, pos.z);
+      group.userData = { type: 'orography', data: m };
+
+      // Selo de cume em bronze
+      const crestGeo = new THREE.ConeGeometry(0.8, 1.6, 3);
+      const crestMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.85, roughness: 0.3 });
+      const crest = new THREE.Mesh(crestGeo, crestMat);
+      crest.rotation.y = Math.PI / 4;
+      group.add(crest);
+
+      const label = this.createTextSprite(`⛰️ ${m.name} (${m.elevation}m)`, '#fde68a');
+      label.position.set(0, 2.0, 0);
+      label.scale.set(5.5, 1.6, 1);
+      group.add(label);
+
+      this.groups.orography.add(group);
+      this.interactiveObjects.push(group);
+    });
+  }
+
+  /**
+   * 6. REINOS E TERRITÓRIOS (Estandartes e Centros de Poder)
+   */
+  buildKingdoms() {
+    this.clearGroup(this.groups.kingdoms);
+    const kingdoms = this.worldData.layers.kingdoms || [];
+
+    kingdoms.forEach(k => {
+      const center = k.center || [500, 350];
+      const pos = this.mapToWorldCoords(center[0], center[1]);
+
+      const group = new THREE.Group();
+      group.position.set(pos.x, pos.y + 0.2, pos.z);
+      group.userData = { type: 'kingdom', data: k, era: k.era || 'Era II' };
+
+      // Estandarte Real 3D
+      const poleGeo = new THREE.CylinderGeometry(0.12, 0.12, 3.8, 8);
+      const poleMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, metalness: 0.8 });
+      const pole = new THREE.Mesh(poleGeo, poleMat);
+      pole.position.y = 1.9;
+      group.add(pole);
+
+      const flagGeo = new THREE.BoxGeometry(1.6, 0.9, 0.08);
+      const flagMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(k.color || '#d62828'), roughness: 0.4 });
+      const flag = new THREE.Mesh(flagGeo, flagMat);
+      flag.position.set(0.8, 3.2, 0);
+      group.add(flag);
+
+      const label = this.createTextSprite(`👑 ${k.name}`, '#fecdd3');
+      label.position.set(0, 4.4, 0);
+      label.scale.set(5.0, 1.6, 1);
+      group.add(label);
+
+      this.groups.kingdoms.add(group);
+      this.interactiveObjects.push(group);
+    });
+  }
+
+  /**
+   * 7. CIVILIZAÇÕES (Monólitos e Berços Antigos)
+   */
+  buildCivilizations() {
+    this.clearGroup(this.groups.civilizations);
+    const civs = this.worldData.layers.civilizations || [];
+
+    civs.forEach(c => {
+      const center = c.center || [500, 350];
+      const pos = this.mapToWorldCoords(center[0], center[1]);
+
+      const group = new THREE.Group();
+      group.position.set(pos.x, pos.y + 0.1, pos.z);
+      group.userData = { type: 'civilization', data: c, era: c.era || 'Era I' };
+
+      // Pilar clássico antigo com capitel
+      const colGeo = new THREE.CylinderGeometry(0.4, 0.5, 2.6, 8);
+      const colMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.6, metalness: 0.2 });
+      const col = new THREE.Mesh(colGeo, colMat);
+      col.position.y = 1.3;
+      group.add(col);
+
+      const capGeo = new THREE.BoxGeometry(1.2, 0.35, 1.2);
+      const cap = new THREE.Mesh(capGeo, colMat);
+      cap.position.y = 2.6;
+      group.add(cap);
+
+      const label = this.createTextSprite(`🏛️ ${c.name}`, '#cbd5e1');
+      label.position.set(0, 3.6, 0);
+      label.scale.set(5.4, 1.6, 1);
+      group.add(label);
+
+      this.groups.civilizations.add(group);
+      this.interactiveObjects.push(group);
+    });
+  }
+
+  /**
+   * 8. CULTURAS (Totens Étnicos)
+   */
+  buildCultures() {
+    this.clearGroup(this.groups.cultures);
+    const cultures = this.worldData.layers.cultures || [];
+
+    cultures.forEach(cult => {
+      const center = cult.center || [500, 350];
+      const pos = this.mapToWorldCoords(center[0], center[1]);
+
+      const group = new THREE.Group();
+      group.position.set(pos.x, pos.y + 0.1, pos.z);
+      group.userData = { type: 'culture', data: cult };
+
+      const totemGeo = new THREE.DodecahedronGeometry(0.7, 0);
+      const totemMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.7, roughness: 0.3 });
+      const totem = new THREE.Mesh(totemGeo, totemMat);
+      totem.position.y = 1.0;
+      group.add(totem);
+
+      const label = this.createTextSprite(`🎭 ${cult.name}`, '#bae6fd');
+      label.position.set(0, 2.3, 0);
+      label.scale.set(4.8, 1.5, 1);
+      group.add(label);
+
+      this.groups.cultures.add(group);
+      this.interactiveObjects.push(group);
+    });
+  }
+
+  /**
+   * 9. CLIMAS (Zonas Bioclimáticas Köppen)
+   */
+  buildClimates() {
+    this.clearGroup(this.groups.climates);
+    const climates = this.worldData.layers.climates || [];
+
+    climates.forEach(clim => {
+      const center = clim.center || [500, 350];
+      const pos = this.mapToWorldCoords(center[0], center[1]);
+
+      const group = new THREE.Group();
+      group.position.set(pos.x, pos.y + 0.15, pos.z);
+      group.userData = { type: 'climate', data: clim };
+
+      const discGeo = new THREE.CylinderGeometry(1.8, 1.8, 0.1, 16);
+      const discMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(clim.color || '#f4a261'),
+        transparent: true,
+        opacity: 0.45
+      });
+      const disc = new THREE.Mesh(discGeo, discMat);
+      group.add(disc);
+
+      const label = this.createTextSprite(`🌤️ ${clim.koppen} (${clim.name})`, '#fed7aa');
+      label.position.set(0, 1.8, 0);
+      label.scale.set(4.5, 1.4, 1);
+      group.add(label);
+
+      this.groups.climates.add(group);
+      this.interactiveObjects.push(group);
+    });
+  }
+
+  /**
+   * 10. OCEAN LANDMASK (Contornos de Costas e Mares Internos)
+   */
+  buildOceanLandmask() {
+    this.clearGroup(this.groups.ocean_landmask);
+    const masks = this.worldData.layers.ocean_landmask || [];
+
+    masks.forEach(geo => {
+      if (!geo.polygon || geo.polygon.length < 3) return;
+      if (geo.type === 'inland_sea') {
+        const pts3D = geo.polygon.map(pt => {
+          const w = this.mapToWorldCoords(pt[0], pt[1]);
+          w.y = 0.12;
+          return w;
+        });
+        const shape = new THREE.Shape();
+        pts3D.forEach((p, idx) => {
+          if (idx === 0) shape.moveTo(p.x, -p.z);
+          else shape.lineTo(p.x, -p.z);
+        });
+        shape.closePath();
+
+        const sGeo = new THREE.ShapeGeometry(shape);
+        sGeo.rotateX(-Math.PI / 2);
+        const sMat = new THREE.MeshStandardMaterial({
+          color: 0x0284c7,
+          transparent: true,
+          opacity: 0.35,
+          roughness: 0.1,
+          metalness: 0.8
+        });
+        const mesh = new THREE.Mesh(sGeo, sMat);
+        mesh.userData = { type: 'ocean_landmask', data: geo };
+        this.groups.ocean_landmask.add(mesh);
+        this.interactiveObjects.push(mesh);
+      }
+    });
+  }
+
+  /**
+   * 11. MACROLÍNGUAS (Medalhões Flutuantes A a M)
    */
   buildMacrolanguages() {
     this.clearGroup(this.groups.macrolanguages);
     const langs = this.worldData.layers.macrolanguages || [];
-
     const sealGeo = new THREE.CylinderGeometry(1.6, 1.6, 0.3, 24);
     sealGeo.rotateX(Math.PI / 2);
 
@@ -510,7 +806,6 @@ class Mapex3DEngine {
         group.position.set(pt.x, Math.max(pt.y + 3.8, 4.5), pt.z);
         group.userData = { type: 'macrolanguage', data: lang, basePosY: group.position.y };
 
-        // Medalhão 3D
         const sealMat = new THREE.MeshStandardMaterial({
           color: new THREE.Color(lang.color),
           metalness: 0.75,
@@ -522,13 +817,11 @@ class Mapex3DEngine {
         const seal = new THREE.Mesh(sealGeo, sealMat);
         group.add(seal);
 
-        // Borda dourada em relevo
         const rimGeo = new THREE.TorusGeometry(1.65, 0.12, 12, 32);
         const rimMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.2 });
         const rim = new THREE.Mesh(rimGeo, rimMat);
         group.add(rim);
 
-        // Letra central em alta resolução
         const label = this.createTextSprite(lang.code, '#0f172a', true);
         label.scale.set(2.4, 2.4, 1);
         label.position.z = 0.22;
@@ -541,7 +834,7 @@ class Mapex3DEngine {
   }
 
   /**
-   * Enclaves ecológicos/florestais 3D (as 4 bacias densas de 107937)
+   * 12. BIOMAS (Enclaves Florestais Elevados no Relevo)
    */
   buildBiomeEnclaves() {
     this.clearGroup(this.groups.biomes);
@@ -549,9 +842,9 @@ class Mapex3DEngine {
 
     biomes.forEach(b => {
       if (!b.polygon || b.polygon.length < 3) return;
-      const pts = b.polygon.map(p => this.mapToWorldCoords(p[0], p[1]));
+      const pts3D = b.polygon.map(p => this.mapToWorldCoords(p[0], p[1]));
       const shape = new THREE.Shape();
-      pts.forEach((p, i) => {
+      pts3D.forEach((p, i) => {
         if (i === 0) shape.moveTo(p.x, -p.z);
         else shape.lineTo(p.x, -p.z);
       });
@@ -560,17 +853,26 @@ class Mapex3DEngine {
       const geom = new THREE.ShapeGeometry(shape);
       geom.rotateX(-Math.PI / 2);
 
+      // Ajusta cada vértice da geometria para a elevação real daquele ponto no terreno + 0.15
+      const pos = geom.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const vx = pos.getX(i);
+        const vz = pos.getZ(i);
+        const elev = this.getTerrainHeightAt(vx, vz);
+        pos.setY(i, elev + 0.18);
+      }
+      geom.computeVertexNormals();
+
       const mat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(b.color),
+        color: new THREE.Color(b.color || '#2d6a4f'),
         transparent: true,
-        opacity: 0.38,
-        roughness: 0.6,
-        metalness: 0.1,
+        opacity: 0.42,
+        roughness: 0.8,
+        metalness: 0.05,
         side: THREE.DoubleSide
       });
 
       const mesh = new THREE.Mesh(geom, mat);
-      mesh.position.y = 0.12;
       mesh.userData = { type: 'biome', data: b };
       this.groups.biomes.add(mesh);
       this.interactiveObjects.push(mesh);
@@ -578,7 +880,6 @@ class Mapex3DEngine {
   }
 
   buildDecorations() {
-    // Rosa dos ventos estilizada em bronze 3D no canto superior esquerdo
     const compassGroup = new THREE.Group();
     compassGroup.position.set(-42, 0.6, -28);
 
@@ -588,7 +889,6 @@ class Mapex3DEngine {
     const ring = new THREE.Mesh(ringGeo, goldMat);
     compassGroup.add(ring);
 
-    // Agulha do Norte
     const needleGeo = new THREE.ConeGeometry(0.7, 3.8, 4);
     needleGeo.rotateX(-Math.PI / 2);
     const needleMat = new THREE.MeshStandardMaterial({ color: 0xe63946, metalness: 0.8, roughness: 0.2 });
@@ -596,7 +896,6 @@ class Mapex3DEngine {
     needle.position.z = -1.9;
     compassGroup.add(needle);
 
-    // Agulha do Sul
     const needleSouthGeo = new THREE.ConeGeometry(0.7, 3.8, 4);
     needleSouthGeo.rotateX(Math.PI / 2);
     const needleSouthMat = new THREE.MeshStandardMaterial({ color: 0x457b9d, metalness: 0.8, roughness: 0.2 });
@@ -609,20 +908,19 @@ class Mapex3DEngine {
 
   createTextSprite(text, color = '#ffffff', isBold = false) {
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
+    canvas.width = 384;
     canvas.height = 128;
     const ctx = canvas.getContext('2d');
 
-    ctx.font = `${isBold ? 'bold ' : ''}38px 'Segoe UI', serif`;
+    ctx.font = `${isBold ? 'bold ' : ''}34px 'Segoe UI', system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Sombra para contraste sobre o relevo
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-    ctx.fillText(text, 128 + 2, 64 + 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.fillText(text, 192 + 2, 64 + 2);
 
     ctx.fillStyle = color;
-    ctx.fillText(text, 128, 64);
+    ctx.fillText(text, 192, 64);
 
     const texture = new THREE.CanvasTexture(canvas);
     const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
@@ -637,6 +935,63 @@ class Mapex3DEngine {
     }
   }
 
+  /**
+   * Ativa / Desativa qualquer uma das 12 camadas na cena 3D
+   */
+  toggleLayer(layerKey, isActive) {
+    if (this.groups[layerKey]) {
+      this.groups[layerKey].visible = isActive;
+    }
+  }
+
+  /**
+   * Filtragem de Linha do Tempo (4 Eras Históricas)
+   */
+  setEra(eraNumber) {
+    this.currentEra = eraNumber;
+    this.applyEraFiltering();
+  }
+
+  applyEraFiltering() {
+    if (!this.currentEra) {
+      // Todas as Eras ativas
+      Object.values(this.groups).forEach(g => {
+        g.children.forEach(c => {
+          c.visible = true;
+          if (c.material) c.material.opacity = c.userData.originalOpacity || c.material.opacity || 1;
+        });
+      });
+      return;
+    }
+
+    const eraMap = { 1: 'Era I', 2: 'Era II', 3: 'Era III', 4: 'Era IV' };
+    const currentEraNum = parseInt(this.currentEra, 10);
+
+    const checkEraObj = (obj) => {
+      const eraStr = obj.userData?.era || obj.userData?.data?.era || 'Era II';
+      let objEraNum = 2;
+      if (eraStr.includes('I') && !eraStr.includes('II') && !eraStr.includes('IV')) objEraNum = 1;
+      else if (eraStr.includes('II') && !eraStr.includes('III')) objEraNum = 2;
+      else if (eraStr.includes('III')) objEraNum = 3;
+      else if (eraStr.includes('IV')) objEraNum = 4;
+
+      if (objEraNum > currentEraNum) {
+        // Feição do futuro daquela era: oculta
+        obj.visible = false;
+      } else if (objEraNum < currentEraNum) {
+        // Feição do passado: permanece como sítio histórico/ruína
+        obj.visible = true;
+      } else {
+        // Feição do apogeu daquela era: plenamente visível e protagonista
+        obj.visible = true;
+      }
+    };
+
+    ['settlements', 'routes', 'kingdoms', 'civilizations'].forEach(grpKey => {
+      this.groups[grpKey]?.children.forEach(checkEraObj);
+    });
+  }
+
   bindEvents() {
     window.addEventListener('resize', () => {
       const w = this.container.clientWidth;
@@ -647,6 +1002,10 @@ class Mapex3DEngine {
     });
 
     const canvas = this.renderer.domElement;
+
+    canvas.addEventListener('mousedown', (e) => {
+      this.mouseDownPos.set(e.clientX, e.clientY);
+    });
 
     // Hover e Raycasting
     canvas.addEventListener('mousemove', (e) => {
@@ -672,69 +1031,33 @@ class Mapex3DEngine {
       this.hoveredObject = null;
     });
 
-    // Clique para inspecionar
+    // Clique para inspecionar ou criar feição sem alert/prompt
     canvas.addEventListener('click', (e) => {
-      // Se estiver com Shift pressionado, cria assentamento
+      const dist = Math.hypot(e.clientX - this.mouseDownPos.x, e.clientY - this.mouseDownPos.y);
+      if (dist > 5) return; // foi um arrasto de câmera, não clique!
+
+      // Shift + Clique: abre o editor customizável com coordenadas pré-preenchidas!
       if (e.shiftKey) {
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const hits = this.raycaster.intersectObject(this.terrainMesh);
         if (hits.length > 0) {
           const pt3D = hits[0].point;
           const mapCoords = this.worldToMapCoords(pt3D.x, pt3D.z);
-          const name = prompt('Nome do novo assentamento 3D:', 'Nova Cidade');
-          if (!name) return;
-
-          this.worldData.layers.settlements.push({
-            id: 'cit_' + Date.now(),
-            name: name,
-            type: 'city',
-            lang: 'K',
-            coords: mapCoords,
-            pop: 32000
-          });
-
-          this.buildSettlements();
-          if (window.buildLayerMenu) window.buildLayerMenu();
-          inspectItem({
-            title: `Nova Cidade Criada: ${name}`,
-            details: `Coordenadas 3D no Terreno: [${mapCoords[0]}, ${mapCoords[1]}]\nElevação do Terreno: ${pt3D.y.toFixed(2)}m\nPopulação Estimada: 32.000 hab.`
-          });
+          if (window.openFeatureEditor) {
+            window.openFeatureEditor({ coords: mapCoords, elevation: pt3D.y });
+          }
         }
         return;
       }
 
-      if (this.hoveredObject && this.hoveredObject.userData) {
+      // Clique normal em objeto interativo: abre inspetor de lore
+      if (this.hoveredObject && this.hoveredObject.userData && this.hoveredObject.userData.type) {
         const u = this.hoveredObject.userData;
-        if (u.type === 'settlement') {
-          inspectItem({
-            title: `Assentamento 3D: ${u.data.name}`,
-            details: `Tipo: ${u.data.type}\nLíngua Predominante: Família ${u.data.lang}\nPopulação Estimada: ${u.data.pop.toLocaleString('pt-BR')} hab.\nCoordenadas do Mapa: [${u.data.coords[0]}, ${u.data.coords[1]}]`
-          });
-        } else if (u.type === 'macrolanguage') {
-          inspectItem({
-            title: `Macrolíngua: Família ${u.data.code} — ${u.data.name}`,
-            details: `Classificação: ${u.data.isHybrid ? 'Zona de Transição / Crioulização' : 'Tronco Macrolinguístico Primário'}\nFidelidade: Carta Manuscrita 107938.`
-          });
-        } else if (u.type === 'route') {
-          inspectItem({
-            title: `Rota Comercial: ${u.data.name}`,
-            details: `Modalidade: ${u.data.type === 'sea' ? 'Navegação Marítima' : 'Caravana Terrestre'}\nPontos Mapeados: ${u.data.points.length} nós topográficos.`
-          });
-        } else if (u.type === 'biome') {
-          inspectItem({
-            title: `Bioma 3D: ${u.data.name}`,
-            details: `Tipo: ${u.data.type}\nEnclave ecológico delimitado conforme o Mapa 1 (107937.jpg).`
-          });
+        if (window.inspectAnyFeature) {
+          window.inspectAnyFeature(u.type, u.data);
         }
       }
     });
-  }
-
-  toggleLayer(layerKey, isActive) {
-    if (layerKey === 'settlements') this.groups.settlements.visible = isActive;
-    else if (layerKey === 'routes') this.groups.routes.visible = isActive;
-    else if (layerKey === 'macrolanguages') this.groups.macrolanguages.visible = isActive;
-    else if (layerKey === 'biomes') this.groups.biomes.visible = isActive;
   }
 
   animate() {
@@ -743,10 +1066,9 @@ class Mapex3DEngine {
     const delta = this.clock.getDelta();
     const time = this.clock.getElapsedTime();
 
-    // 1. Atualiza OrbitControls
     if (this.controls) this.controls.update();
 
-    // 2. Animação de flutuação dos selos macrolinguísticos
+    // Flutuação suave dos medalhões macrolinguísticos
     this.groups.macrolanguages.children.forEach((seal, idx) => {
       if (seal.userData.basePosY !== undefined) {
         seal.position.y = seal.userData.basePosY + Math.sin(time * 2.2 + idx * 0.8) * 0.35;
@@ -754,7 +1076,7 @@ class Mapex3DEngine {
       }
     });
 
-    // 3. Animação de tráfego de rotas (caravanas e navios)
+    // Tráfego contínuo das rotas comerciais (caravanas e naus)
     this.routeCaravans.forEach(item => {
       item.progress += delta * item.speed;
       if (item.progress > 1) item.progress = 0;
@@ -762,7 +1084,6 @@ class Mapex3DEngine {
       item.mesh.position.copy(pt);
     });
 
-    // 4. Renderiza cena
     if (this.renderer && this.scene && this.camera) {
       this.renderer.render(this.scene, this.camera);
     }

@@ -3,94 +3,109 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mapex 2.5D — Worldbuilding GIS (Antigravity + Gemini 3.8 Flash)</title>
+  <title>Mapex 2.5D & 3D — Worldbuilding GIS (Antigravity)</title>
   <style>
     :root {
-      --bg-dark: #0f141c;
-      --panel-bg: rgba(18, 25, 35, 0.92);
+      --bg-dark: #0a0e17;
+      --panel-bg: rgba(15, 21, 32, 0.94);
+      --panel-card: rgba(22, 31, 46, 0.85);
       --accent: #d4a373;
       --accent-bright: #e9c46a;
+      --accent-glow: rgba(233, 196, 106, 0.35);
       --text: #e2e8f0;
       --muted: #94a3b8;
       --border: rgba(212, 163, 115, 0.28);
+      --success: #10b981;
+      --danger: #ef4444;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: var(--bg-dark);
       color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       overflow: hidden;
       height: 100vh;
       display: grid;
-      grid-template-columns: 310px 1fr 340px;
+      grid-template-columns: 320px 1fr 380px;
     }
+
+    /* BARRA LATERAL ESQUERDA */
     .sidebar {
       background: var(--panel-bg);
       border-right: 1px solid var(--border);
       padding: 16px;
       overflow-y: auto;
       z-index: 10;
-      backdrop-filter: blur(10px);
-    }
-    .sidebar-right {
-      background: var(--panel-bg);
-      border-left: 1px solid var(--border);
-      padding: 16px;
+      backdrop-filter: blur(12px);
       display: flex;
       flex-direction: column;
       gap: 12px;
-      z-index: 10;
     }
-    h1 { font-size: 1.2rem; color: var(--accent-bright); letter-spacing: 1px; margin-bottom: 4px; }
-    .subtitle { font-size: 0.76rem; color: var(--muted); margin-bottom: 14px; }
+    h1 { font-size: 1.25rem; color: var(--accent-bright); letter-spacing: 1.2px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .subtitle { font-size: 0.75rem; color: var(--muted); margin-top: -6px; margin-bottom: 8px; }
+    
     .section-title {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 1.2px;
       color: var(--accent);
-      margin: 14px 0 8px;
+      margin: 10px 0 6px;
       border-bottom: 1px solid var(--border);
       padding-bottom: 4px;
+      font-weight: 700;
     }
+
+    .control-group { margin-bottom: 8px; }
+    .control-group label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+    .control-group input[type=range], select, input[type=text], input[type=number], textarea {
+      width: 100%;
+      background: #151d2a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 0.82rem;
+      font-family: inherit;
+    }
+    .control-group input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-bright);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
     .layer-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 6px 8px;
       border-radius: 6px;
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       cursor: pointer;
       transition: background 0.15s;
     }
     .layer-item:hover { background: rgba(255,255,255,0.06); }
     .layer-item input { accent-color: var(--accent-bright); cursor: pointer; }
     .badge {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       padding: 2px 6px;
       border-radius: 4px;
       background: rgba(212,163,115,0.18);
       color: var(--accent-bright);
+      font-weight: 600;
     }
-    .control-group { margin-bottom: 10px; }
-    .control-group label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
-    .control-group input[type=range], select {
-      width: 100%;
-      background: #1e293b;
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 5px;
-    }
+
+    /* VIEWPORT CENTRAL */
     #viewport {
       position: relative;
       width: 100%;
       height: 100vh;
       overflow: hidden;
-      background: radial-gradient(circle at center, #1b2838 0%, #090d14 100%);
+      background: radial-gradient(circle at center, #182332 0%, #080c14 100%);
       perspective: 1200px;
       cursor: grab;
     }
     #viewport:active { cursor: grabbing; }
+
     #stage25d {
       position: absolute;
       top: 50%;
@@ -102,7 +117,7 @@
       transition: transform 0.08s ease-out;
       box-shadow: 0 35px 80px rgba(0,0,0,0.85), 0 0 0 2px rgba(212,163,115,0.4);
       border-radius: 6px;
-      background: #162636;
+      background: #14202d;
     }
     .map-raster-layer {
       position: absolute;
@@ -120,86 +135,259 @@
       height: 700px;
       transform-style: preserve-3d;
     }
-    .lang-node {
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .lang-node:hover { filter: brightness(1.3); }
-    .prompt-box {
-      width: 100%;
-      height: 95px;
-      background: #161f2c;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      padding: 8px;
-      font-size: 0.83rem;
-      resize: none;
-    }
-    .btn {
-      background: linear-gradient(135deg, #d4a373, #b5835a);
-      color: #0f141c;
-      border: none;
-      padding: 9px 12px;
-      border-radius: 6px;
-      font-weight: 700;
-      font-size: 0.82rem;
-      cursor: pointer;
-    }
-    .btn:hover { filter: brightness(1.1); }
-    .inspector-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 0.82rem;
-      flex: 1;
-      overflow-y: auto;
-    }
-    .scale-hud {
-      position: absolute;
-      bottom: 18px;
-      left: 18px;
-      background: var(--panel-bg);
-      border: 1px solid var(--border);
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 0.78rem;
-      pointer-events: none;
-    }
-    .scale-bar {
-      width: 85px;
-      height: 6px;
-      border: 2px solid var(--accent-bright);
-      border-top: none;
-      margin-top: 4px;
-    }
-    .hud-instructions {
+
+    /* HUD DA LINHA DO TEMPO NO VIEWPORT */
+    .timeline-hud {
       position: absolute;
       top: 16px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(15, 20, 28, 0.88);
+      background: rgba(15, 21, 32, 0.92);
       border: 1px solid var(--border);
-      padding: 7px 18px;
+      padding: 6px 14px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 15;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    }
+    .timeline-hud-title {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-right: 4px;
+    }
+    .era-pill {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(212,163,115,0.3);
+      color: var(--text);
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 0.74rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+    }
+    .era-pill:hover {
+      background: rgba(212,163,115,0.2);
+      border-color: var(--accent-bright);
+    }
+    .era-pill.active {
+      background: var(--accent-bright);
+      color: #0a0e17;
+      border-color: var(--accent-bright);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .hud-instructions {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 21, 32, 0.88);
+      border: 1px solid var(--border);
+      padding: 6px 16px;
       border-radius: 20px;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       color: var(--accent-bright);
       display: flex;
       gap: 12px;
       z-index: 15;
       backdrop-filter: blur(8px);
       pointer-events: none;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+    }
+
+    .scale-hud {
+      position: absolute;
+      bottom: 18px;
+      left: 18px;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      pointer-events: none;
+      z-index: 12;
+    }
+    .scale-bar {
+      width: 85px;
+      height: 5px;
+      border: 2px solid var(--accent-bright);
+      border-top: none;
+      margin-top: 3px;
+    }
+
+    /* BARRA LATERAL DIREITA: WORKBENCH MODULAR COM ABAS */
+    .sidebar-right {
+      background: var(--panel-bg);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+    
+    .tab-header {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      background: rgba(10, 14, 23, 0.95);
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      padding: 10px 4px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .tab-btn span.icon { font-size: 1.05rem; }
+    .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+    .tab-btn.active {
+      color: var(--accent-bright);
+      border-bottom-color: var(--accent-bright);
+      background: rgba(212,163,115,0.1);
+    }
+
+    .tab-content {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: none;
+    }
+    .tab-content.active { display: block; }
+
+    .btn {
+      background: linear-gradient(135deg, #d4a373, #b5835a);
+      color: #0f141c;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-secondary {
+      background: #253347;
+      color: #e2e8f0;
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #33445e; }
+    .btn-danger {
+      background: #dc2626;
+      color: #fff;
+    }
+    .btn-danger:hover { background: #ef4444; }
+    .btn-full { width: 100%; margin-top: 6px; }
+
+    /* CARDS DO INSPETOR */
+    .lore-card {
+      background: var(--panel-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .lore-title {
+      font-size: 1.05rem;
+      color: var(--accent-bright);
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .lore-tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .lore-tag {
+      background: rgba(212,163,115,0.15);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .lore-text {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+    }
+    .lore-section {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 8px;
+      font-size: 0.78rem;
+    }
+    .lore-section-title {
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.8px;
+    }
+
+    /* TOAST FEEDBACK */
+    #toastContainer {
+      position: fixed;
+      bottom: 24px;
+      right: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .toast {
+      background: #111827;
+      border: 1px solid var(--accent);
+      color: #f1f5f9;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+      animation: fadeIn 0.2s ease-out;
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
 
-  <!-- BARRA ESQUERDA: CAMADAS E CÂMERA 2.5D / 3D -->
+  <!-- BARRA ESQUERDA: NAVEGAÇÃO E CONTROLES DE TERRENO -->
   <aside class="sidebar">
-    <h1>MAPEX 3D & 2.5D</h1>
-    <div class="subtitle">Framework Cartográfico • Gemini 3.8 Flash</div>
+    <div>
+      <h1>🗺️ MAPEX GIS</h1>
+      <div class="subtitle">Workbench Cartográfico 2.5D & 3D</div>
+    </div>
 
     <div class="section-title">Modo de Renderização</div>
     <div class="control-group">
@@ -209,17 +397,20 @@
       </select>
     </div>
 
-    <div class="section-title">Carta Manuscrita Base</div>
+    <div class="section-title">Estilo Cartográfico Base</div>
     <div class="control-group">
       <select id="baseMapSelect">
-        <option value="assets/base_maps/107937.jpg" selected>Mapa 1 — Geografia & Florestas (107937)</option>
-        <option value="assets/base_maps/107938.jpg">Mapa 2 — Macrolínguas A-M (107938)</option>
-        <option value="assets/base_maps/107944.jpg">Mapa 3 — Costas Limpas (107944)</option>
+        <option value="assets/styled_maps/mapex_kosmos_physical.png" selected>🗺️ Carta Física do Kosmos (Mapex Base)</option>
+        <option value="assets/styled_maps/mapex_kosmos_political.png">👑 Carta Política & Macrolínguas (A-M)</option>
+        <option value="assets/styled_maps/mapex_kosmos_dark.png">🌌 Carta Topográfica Noturna (Dark GIS)</option>
+        <option value="assets/base_maps/107937.jpg">📜 Esboço Manuscrito 1: Geografia</option>
+        <option value="assets/base_maps/107938.jpg">📜 Esboço Manuscrito 2: Línguas</option>
+        <option value="assets/base_maps/107944.jpg">📜 Esboço Manuscrito 3: Costas</option>
       </select>
     </div>
     <div class="control-group">
-      <label><span>Opacidade do Desenho Base</span><span id="baseOpacityVal">85%</span></label>
-      <input type="range" id="baseOpacity" min="0" max="100" value="85" />
+      <label><span>Opacidade da Camada Base</span><span id="baseOpacityVal">100%</span></label>
+      <input type="range" id="baseOpacity" min="0" max="100" value="100" />
     </div>
 
     <!-- CONTROLES 3D -->
@@ -235,7 +426,7 @@
       </div>
     </div>
 
-    <!-- CONTROLES 2.5D CLÁSSICO -->
+    <!-- CONTROLES 2.5D -->
     <div id="controls25D" style="display:none">
       <div class="section-title">Câmera 2.5D & Perspectiva</div>
       <div class="control-group">
@@ -252,54 +443,264 @@
       </div>
     </div>
 
-    <div class="section-title">12 Camadas do Mundo (GIS)</div>
-    <div id="layerToggles"></div>
+    <div class="section-title">Ações Rápidas</div>
+    <button class="btn btn-secondary btn-full" id="btnQuickAdd">➕ Adicionar Nova Feição</button>
+    <button class="btn btn-full" id="btnSaveAllTop">💾 Salvar Alterações (Disco)</button>
   </aside>
 
   <!-- VIEWPORT CENTRAL -->
   <main id="viewport">
+    <!-- HUD LINHA DO TEMPO NO TOPO -->
+    <div class="timeline-hud">
+      <span class="timeline-hud-title">⏳ Linha do Tempo:</span>
+      <button class="era-pill active" data-era="all">Todas as Eras</button>
+      <button class="era-pill" data-era="1">Era I (Claustras)</button>
+      <button class="era-pill" data-era="2">Era II (Bronze/Golfo)</button>
+      <button class="era-pill" data-era="3">Era III (Ferro/Passo)</button>
+      <button class="era-pill" data-era="4">Era IV (Companhias)</button>
+    </div>
+
     <div class="hud-instructions" id="hud3DHint">
-      <span>🖱️ <strong>Girar 3D:</strong> Botão esquerdo</span>
+      <span>🖱️ <strong>Rotacionar:</strong> Botão esquerdo</span>
       <span>•</span>
       <span>🖱️ <strong>Mover:</strong> Botão direito</span>
       <span>•</span>
       <span>📜 <strong>Zoom:</strong> Scroll</span>
       <span>•</span>
-      <span>⇧ <strong>Adicionar Cidade:</strong> Shift + Clique</span>
+      <span>⇧ <strong>Adicionar Feição:</strong> Shift + Clique</span>
     </div>
 
     <div id="stage25d" style="display:none">
-      <img id="rasterBase" class="map-raster-layer" src="assets/base_maps/107937.jpg" alt="Mapa Base" />
+      <img id="rasterBase" class="map-raster-layer" src="assets/styled_maps/mapex_kosmos_physical.png" alt="Mapa Base Estilizado Mapex" />
       <svg id="svgOverlay" viewBox="0 0 1000 700"></svg>
     </div>
 
     <div class="scale-hud">
-      <div>Escala Oficial (Mapa 1): <strong>250 km</strong></div>
+      <div>Escala Oficial: <strong>250 km</strong></div>
       <div class="scale-bar"></div>
     </div>
   </main>
 
-  <!-- BARRA DIREITA: INSPETOR E AGENTE GEMINI 3.8 FLASH -->
+  <!-- BARRA LATERAL DIREITA: WORKBENCH COM 5 ABAS -->
   <aside class="sidebar-right">
-    <div class="section-title" style="margin-top:0">Inspetor Cartográfico</div>
-    <div id="inspector" class="inspector-card">
-      <strong>Clique em qualquer família linguística (A–M), cidade, cordilheira, bacia florestal ou rota</strong> no mapa 2.5D/3D para inspecionar seus atributos.
+    <nav class="tab-header">
+      <button class="tab-btn active" data-tab="tab-inspector">
+        <span class="icon">📜</span><span>Inspetor</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-editor">
+        <span class="icon">✍️</span><span>Editor</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-layers">
+        <span class="icon">🗺️</span><span>Camadas</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-timeline">
+        <span class="icon">⏳</span><span>Eras</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-snapshots">
+        <span class="icon">💾</span><span>Dados</span>
+      </button>
+    </nav>
+
+    <!-- ABA 1: INSPETOR DE LORE & OBJETOS -->
+    <div id="tab-inspector" class="tab-content active">
+      <div id="inspectorContent">
+        <div class="lore-card">
+          <div class="lore-title">Selecione uma Feição</div>
+          <div class="lore-text">Clique em qualquer cidade, cordilheira, rio, recurso, reino, enclave ou família linguística no mapa 3D ou 2.5D para inspecionar seus atributos e crônicas.</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:6px">💡 Dica: Pressione <strong>Shift + Clique</strong> no terreno para abrir o editor e criar uma nova feição naquele local exato.</div>
+        </div>
+      </div>
     </div>
 
-    <div class="section-title">Console Gemini 3.8 Flash</div>
-    <select id="agentSelect">
-      <option value="mapex-orchestrator">Agente: Mapex Orchestrator</option>
-      <option value="physical-cartographer">Agente: Physical Cartographer (Clima/Rios)</option>
-      <option value="anthro-linguist">Agente: Anthro-Linguist (Línguas A-M)</option>
-      <option value="webgl-25d-engineer">Agente: WebGL 3D Engineer</option>
-    </select>
-    <textarea id="aiPrompt" class="prompt-box" placeholder="Ex: Gere 4 cidades costeiras na região C isoladas pela cordilheira e crie uma rota marítima até o enclave G/K..."></textarea>
-    <button class="btn" id="runAgentBtn">Executar com Gemini 3.8 Flash</button>
-    <button class="btn" id="exportJsonBtn" style="background:#334155;color:#e2e8f0">Exportar GeoJSON / Camadas</button>
+    <!-- ABA 2: EDITOR / CONSTRUTOR DE FEIÇÕES CUSTOMIZÁVEL -->
+    <div id="tab-editor" class="tab-content">
+      <div class="section-title" style="margin-top:0">Editor de Feição GIS</div>
+      <form id="featureEditForm" onsubmit="return false;">
+        <input type="hidden" id="editFeatureId" value="" />
+        
+        <div class="control-group">
+          <label>Camada GIS Destino</label>
+          <select id="editLayerKey">
+            <option value="settlements">10. Assentamentos / Cidades / Fortalezas</option>
+            <option value="kingdoms">9. Reinos / Principados / Confederações</option>
+            <option value="resources">12. Recursos Estratégicos (Minas, Portos, Bosques)</option>
+            <option value="routes">11. Rotas Comerciais (Marítimas ou Terrestres)</option>
+            <option value="hydrography">3. Hidrografia (Rios e Canais)</option>
+            <option value="orography">2. Orografia (Cordilheiras e Picos)</option>
+            <option value="biomes">4. Biomas e Bacias Fechadas</option>
+            <option value="climates">5. Climas Köppen</option>
+            <option value="macrolanguages">6. Macrolínguas (A a M)</option>
+            <option value="cultures">7. Culturas</option>
+            <option value="civilizations">8. Civilizações Antigas</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>Nome da Feição</label>
+          <input type="text" id="editName" placeholder="Ex: Keth-Adar, Passo de Ferro, etc." required />
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="control-group">
+            <label>Família Macrolinguística</label>
+            <select id="editLang">
+              <option value="K">K (Golfo)</option>
+              <option value="G">G (Arquipélago)</option>
+              <option value="E">E (Claustra Florestal)</option>
+              <option value="J">J (Planalto Boreal)</option>
+              <option value="C">C (Costa Sul)</option>
+              <option value="A">A (Extremo Leste)</option>
+              <option value="H">H (Península Oestina)</option>
+              <option value="I">I (Ártico Setentrional)</option>
+              <option value="F">F (Planície Austral)</option>
+              <option value="D">D (Noroeste Austral)</option>
+              <option value="B">B (Ilha Isolada)</option>
+              <option value="L">L (Mesopotâmia Centro)</option>
+              <option value="M">M (Ilha Austral)</option>
+              <option value="G/K">G/K (Híbrida Portuária)</option>
+              <option value="E/L">E/L (Corredor Florestal)</option>
+              <option value="H/I">H/I (Transição Boreal)</option>
+              <option value="I/J">I/J (Transição Boreal)</option>
+              <option value="I/J/L">I/J/L (Transição Boreal)</option>
+              <option value="M/E">M/E (Transição Austral)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Era de Fundação / Apogeu</label>
+            <select id="editEra">
+              <option value="Era I">Era I (Alvorecer)</option>
+              <option value="Era II" selected>Era II (Bronze)</option>
+              <option value="Era III">Era III (Ferro)</option>
+              <option value="Era IV">Era IV (Companhias)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="control-group">
+            <label>Tipo / Classificação</label>
+            <input type="text" id="editType" placeholder="Ex: city, fortress, mine, port" />
+          </div>
+          <div class="control-group">
+            <label>População / Atributo</label>
+            <input type="number" id="editPop" placeholder="Ex: 35000" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="control-group">
+            <label>Coordenada X (0..1000)</label>
+            <input type="number" id="editCoordX" min="0" max="1000" required />
+          </div>
+          <div class="control-group">
+            <label>Coordenada Y (0..700)</label>
+            <input type="number" id="editCoordY" min="0" max="700" required />
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Crônica Narrativa / Lore Histórico</label>
+          <textarea id="editLore" rows="3" placeholder="Contexto histórico, geopolítico ou mitológico da feição..."></textarea>
+        </div>
+
+        <div class="control-group">
+          <label>Economia / Guildas / Produtos</label>
+          <input type="text" id="editEconomy" placeholder="Ex: Metalurgia de ferro, exportação de sal marinho..." />
+        </div>
+
+        <div class="control-group">
+          <label>Marcos Notáveis (separados por vírgula)</label>
+          <input type="text" id="editLandmarks" placeholder="Ex: Farol de Bronze, Muralha Ciclope..." />
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn" style="flex:1" id="btnSaveFeature">💾 Salvar Feição</button>
+          <button class="btn btn-secondary" id="btnClearForm">Limpar</button>
+          <button class="btn btn-danger" id="btnDeleteFeature" style="display:none">Excluir</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ABA 3: GERENCIADOR DE CAMADAS GIS -->
+    <div id="tab-layers" class="tab-content">
+      <div class="section-title" style="margin-top:0">12 Camadas do Mundo (GIS)</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px">Ative ou oculte as camadas em tempo real em 2.5D e 3D:</div>
+      <div id="layerToggles"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-secondary btn-full" id="btnEnableAllLayers">Ativar Todas</button>
+        <button class="btn btn-secondary btn-full" id="btnDisableAllLayers">Desativar Todas</button>
+      </div>
+    </div>
+
+    <!-- ABA 4: LINHA DO TEMPO & ERAS -->
+    <div id="tab-timeline" class="tab-content">
+      <div class="section-title" style="margin-top:0">Simulador de Eras Históricas</div>
+      <div class="control-group">
+        <label><span>Era Atual Selecionada</span><span id="timelineEraLabel">Todas as Eras</span></label>
+        <input type="range" id="timelineSlider" min="0" max="4" value="0" />
+      </div>
+
+      <div id="timelineEraCard" class="lore-card" style="margin-top:10px">
+        <div class="lore-title" id="eraTitleDisplay">História Pan-Temporal</div>
+        <div class="lore-text" id="eraDescriptionDisplay">Todas as feições conhecidas de todas as quatro grandes eras estão ativas e visíveis simultaneamente no mapa do Kosmos.</div>
+      </div>
+
+      <div class="section-title">Crônica Oficial das 4 Eras</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:0.78rem">
+        <div style="background:rgba(255,255,255,0.03);padding:8px;border-radius:6px;border-left:3px solid #10b981">
+          <strong style="color:var(--accent-bright)">Era I — Alvorecer das Claustras:</strong> Isolamento das populações nas 4 bacias florestais fechadas (E, E/L, F/A) e refúgios insulares.
+        </div>
+        <div style="background:rgba(255,255,255,0.03);padding:8px;border-radius:6px;border-left:3px solid #38bdf8">
+          <strong style="color:var(--accent-bright)">Era II — Idade do Bronze & Talassocracias:</strong> Berço civilizacional no Golfo de K, rotas marítimas no arquipélago G e travessia do estreito oriental por A.
+        </div>
+        <div style="background:rgba(255,255,255,0.03);padding:8px;border-radius:6px;border-left:3px solid #f59e0b">
+          <strong style="color:var(--accent-bright)">Era III — Era do Ferro & Impérios de Passo:</strong> Metalurgia na Cadeia Boreal (J) e fortificação dos desfiladeiros montanhosos entre K, E e C.
+        </div>
+        <div style="background:rgba(255,255,255,0.03);padding:8px;border-radius:6px;border-left:3px solid #a855f7">
+          <strong style="color:var(--accent-bright)">Era IV — Grandes Companhias Transcontinentais:</strong> Integração comercial global, frotas transoceânicas e rotas árticas (H/I, I/J, I/J/L).
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 5: SNAPSHOTS, DADOS & SERVIDOR -->
+    <div id="tab-snapshots" class="tab-content">
+      <div class="section-title" style="margin-top:0">Persistência & Snapshots</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px">Salva as camadas direto no arquivo local do projeto com versionamento histórico:</div>
+      
+      <button class="btn btn-full" id="btnSaveLayersServer">💾 Salvar no Disco & Gerar Snapshot</button>
+
+      <div class="section-title">Histórico de Snapshots (saves/)</div>
+      <div class="control-group">
+        <select id="snapshotSelect">
+          <option value="">Carregando snapshots...</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" style="flex:1" id="btnRestoreSnapshot">Restaurar Snapshot</button>
+        <button class="btn btn-secondary" id="btnRefreshSnapshots">🔄</button>
+      </div>
+
+      <div class="section-title">Importar / Exportar JSON</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" style="flex:1" id="exportJsonBtn">Baixar JSON</button>
+        <label class="btn btn-secondary" style="flex:1;cursor:pointer;text-align:center">
+          Importar JSON
+          <input type="file" id="importJsonInput" accept=".json" style="display:none" />
+        </label>
+      </div>
+
+      <div class="section-title">Assistente Gemini 3.8 Flash</div>
+      <textarea id="aiPrompt" class="control-group" rows="3" placeholder="Ex: Crie 3 assentamentos da Era II na costa G/K com economia pesqueira..."></textarea>
+      <button class="btn btn-full" id="runAgentBtn">🪄 Sugerir Feições com Gemini</button>
+    </div>
   </aside>
+
+  <!-- RECIPIENTE DE NOTIFICAÇÕES TOAST -->
+  <div id="toastContainer"></div>
 
   <script src="src/engine/three.min.js"></script>
   <script src="src/engine/OrbitControls.js"></script>
+  <script src="src/data/world_layers.js"></script>
   <script src="src/engine/map3d_engine.js"></script>
   <script src="src/engine/map25d.js"></script>
 </body>
