@@ -1,10 +1,10 @@
 {
   "name": "mapex-25d-antigravity",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Framework 2.5D de Cartografia e Worldbuilding para Antigravity usando Gemini 3.8 Flash",
+  "description": "Framework Cartográfico 2.5D & Worldbuilding Studio",
   "scripts": {
-    "dev": "npx vite --port 3000",
-    "start": "python3 -m http.server 3000"
+    "start": "node server.js",
+    "validate": "node src/services/validate_layers.js"
   }
 }

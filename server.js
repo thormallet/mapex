@@ -80,6 +80,13 @@ const server = http.createServer(async (req, res) => {
       const formattedJson = JSON.stringify(parsed, null, 2);
       fs.writeFileSync(snapshotPath, formattedJson, 'utf8');
       fs.writeFileSync(DATA_FILE, formattedJson, 'utf8');
+      
+      const jsFallbackPath = path.join(ROOT, 'src', 'data', 'world_layers.js');
+      try {
+        fs.writeFileSync(jsFallbackPath, 'window.MAPEX_DEFAULT_DATA = ' + formattedJson + ';\n', 'utf8');
+      } catch (e) {
+        console.warn('Falha ao sincronizar world_layers.js fallback:', e.message);
+      }
 
       return sendJson(res, 200, {
         ok: true,
